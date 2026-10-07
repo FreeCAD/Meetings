@@ -1,0 +1,42 @@
+# FreeCAD terms for speech-to-text. One term for each line. Lines that start with # are ignored.
+FreeCAD
+FPA
+OCCT
+OpenCascade
+workbench
+CAM
+BIM
+Part Design
+Sketcher
+TechDraw
+Assembly
+FEM
+Path
+Job
+post-processor
+G-code
+LinuxCNC
+GRBL
+toolbit
+tool controller
+dressup
+adaptive clearing
+V-carve
+helix
+stepover
+stepdown
+feed rate
+spindle
+Work Plane
+TNP
+topological naming
+pull request
+PR
+GitHub
+Python
+Qt
+PySide
+Coin3D
+Addon Manager
+Ondsel
+sliptonic
