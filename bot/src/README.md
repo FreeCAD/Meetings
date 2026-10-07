@@ -34,7 +34,7 @@ npm install
 
 Run `node capture.js --help` for the options.
 
-The bot shows the image `bot/avatar.png` as its avatar. Use `--avatar <url>` or the `CROW_AVATAR_URL` environment variable for a different image. The address must be public, because each participant loads the image from it.
+The bot shows the image `bot/avatar.png` as its avatar. Use `--avatar <url>` or the `CROW_AVATAR_URL` environment variable for a different image. The address must be public, because each participant loads the image from it. A Jitsi host that sets `disableThirdPartyRequests` shows the initials of the bot and not the image.
 
 ## Output
 
