@@ -34,6 +34,8 @@ npm install
 
 Run `node capture.js --help` for the options.
 
+The bot shows the image `bot/avatar.png` as its avatar. Use `--avatar <url>` or the `CROW_AVATAR_URL` environment variable for a different image. The address must be public, because each participant loads the image from it.
+
 ## Output
 
 | File | Content |

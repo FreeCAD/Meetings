@@ -11,4 +11,6 @@ This repository contains the agendas and the minutes of the public FreeCAD commu
 
 Crow joins a meeting with the display name "Crow - AI Notetaker". It drafts the minutes and opens a pull request. A maintainer reviews each pull request before the merge.
 
+The source code has the MIT license. See `LICENSE`.
+
 This is a proof of concept. See `bot/reference/document.md` for the plan and `bot/src/README.md` for the procedures.

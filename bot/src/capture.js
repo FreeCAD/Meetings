@@ -15,6 +15,7 @@ const { values: opt } = parseArgs({
         url: { type: 'string' },
         out: { type: 'string' },
         name: { type: 'string', default: 'Crow - AI Notetaker' },
+        avatar: { type: 'string', default: process.env.CROW_AVATAR_URL || 'https://raw.githubusercontent.com/FreeCAD/Meetings/main/bot/avatar.png' },
         'wait-minutes': { type: 'string', default: '15' },
         'alone-minutes': { type: 'string', default: '5' },
         'max-minutes': { type: 'string', default: '120' },
@@ -29,6 +30,7 @@ if (opt.help || !opt.url) {
 
   --out <dir>            output directory (default: out/<time stamp>)
   --name <text>          display name of the bot
+  --avatar <url>         HTTPS address of the avatar image of the bot ("" for no avatar)
   --wait-minutes <n>     maximum wait for the room to open (default 15)
   --alone-minutes <n>    leave after this time with no other participant (default 5)
   --max-minutes <n>      maximum capture duration (default 120)
@@ -87,6 +89,11 @@ try {
         exitCode = 1;
     } else {
         log('joined the conference');
+        if (opt.avatar) {
+            // The other participants load the image from this address, so it must be public.
+            await page.evaluate(url => window.APP.conference.changeLocalAvatarUrl(url), opt.avatar)
+                .catch(e => log(`avatar error: ${e.message}`));
+        }
         await page.exposeFunction('__ntEvent', onEvent);
         await page.exposeFunction('__ntChunk', (file, base64) => appendFileSync(join(outDir, file), Buffer.from(base64, 'base64')));
         await page.evaluate(installRecorder, { pollMs: 200, bitrate: Number(opt.bitrate) });

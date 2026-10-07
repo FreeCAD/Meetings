@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#e8a33d"/>
+  <!-- body and head -->
+  <path d="M60 256 C60 170 84 120 118 104 C108 60 150 34 184 54 C204 66 208 88 200 104 L176 112 C184 160 176 210 160 256 Z" fill="#1c1c22"/>
+  <!-- beak -->
+  <path d="M196 78 L244 98 L198 108 Z" fill="#33333d"/>
+  <!-- eye -->
+  <circle cx="170" cy="78" r="11" fill="#f5f5f5"/>
+  <circle cx="173" cy="78" r="5" fill="#1c1c22"/>
+  <!-- wing line -->
+  <path d="M92 250 C96 200 110 160 134 136" fill="none" stroke="#3a3a46" stroke-width="6" stroke-linecap="round"/>
+</svg>

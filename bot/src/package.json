@@ -2,6 +2,7 @@
   "name": "freecad-notetaker-capture",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Capture test: record one audio track for each participant of a Jitsi meeting",
   "type": "module",
   "scripts": {
