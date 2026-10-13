@@ -56,7 +56,6 @@ None recorded.
 ## Action items
 
 - **Frank (mnesarco):** Contact the FreeCAD blog author to request a post about the FreeCAD Launcher.
-- **Frank (mnesarco):** Ask Discord administrators to create a dedicated channel for the FreeCAD Launcher.
 - **Frank (mnesarco):** Implement the ability for users to customize profile icons, including selecting from a library or uploading a custom image, and ensure the icon is stored within the profile.
 - **Frank (mnesarco):** Investigate and implement Flatpak packaging for the launcher to enable automatic updates on Linux.
 - **Frank (mnesarco):** Implement a system integration feature to add the launcher and profile shortcuts to the operating system's application menu.
