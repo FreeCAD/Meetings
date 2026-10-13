@@ -37,7 +37,7 @@ John suggested that the launcher needs more visibility, proposing a dedicated ch
 
 ### Add-on ecosystem health dashboard
 
-Frank presented a dashboard he developed to analyze the health of the add-on ecosystem. The tool tracks static analysis issues, dependency usage, and trends in add-on quality over time, highlighting which add-ons are improving and which are accumulating errors. Frank explained that the report is currently public but not widely promoted, as he is still refining the metrics and removing confusing elements, such as false positives caused by add-on index changes. The dashboard reveals that PySide and matplotlib are the most common external dependencies.
+Frank presented a dashboard he developed to analyze the health of the add-on ecosystem. The tool tracks static analysis issues, dependency usage, and trends in add-on quality over time, highlighting which add-ons are improving and which are accumulating errors. Frank explained that the report is currently public but not widely promoted, as he is still refining the metrics and removing confusing elements, such as false positives caused by add-on index changes. The dashboard reveals that numpy, matplotlib and scipy are the most common external dependencies.
 
 ### Pull request review bottlenecks and project governance
 
