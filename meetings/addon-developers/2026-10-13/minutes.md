@@ -33,7 +33,7 @@ Frank and John discussed distribution methods for the launcher. Frank confirmed 
 
 ### Community promotion and communication
 
-John suggested that the launcher needs more visibility, proposing a dedicated channel on the FreeCAD Discord server for user questions and discussion, as well as a blog post on the official website. Frank agreed to contact the blog author to request coverage and to ask Discord administrators about creating a dedicated channel. They noted that current awareness is low, with few user reports outside of specific Windows permission issues.
+John suggested that the launcher needs more visibility, proposing a dedicated channel on the FreeCAD Discord server for user questions and discussion, as well as a blog post on the official website. Frank agreed to contact the blog author to request coverage but not sure to ask Discord administrators about creating a dedicated channel. They noted that current awareness is low, with few user reports outside of specific Windows permission issues.
 
 ### Add-on ecosystem health dashboard
 
