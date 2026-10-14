@@ -40,3 +40,4 @@ Coin3D
 Addon Manager
 Ondsel
 sliptonic
+Yorik

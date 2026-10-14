@@ -1,0 +1,14 @@
+{
+  "calendar": "https://cloud.freecad.org/remote.php/dav/public-calendars/ZtJiizXtSqBaacwo?export",
+  "jitsi_hosts": ["meet.jit.si"],
+  "series": [
+    {"match": "PR & Issues Review", "deny": true},
+    {"match": "OCCT Dev Meeting", "name": "OCCT Dev Meeting", "dir": "occt-dev"},
+    {"match": "developers meeting", "name": "Developers Meeting", "dir": "developers"},
+    {"match": "Addon Developer Meetup", "name": "Addon Developer Meetup", "dir": "addon-developers"},
+    {"match": "CAM Meetup", "name": "CAM Meetup", "dir": "cam"},
+    {"match": "FPA Meetup", "name": "FPA Meetup", "dir": "fpa"},
+    {"match": "DWG Meetup", "name": "DWG Meetup", "dir": "dwg"},
+    {"match": "BIM Meetup", "name": "BIM Meetup", "dir": "bim"}
+  ]
+}

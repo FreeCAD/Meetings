@@ -35,19 +35,28 @@ HERE = Path(__file__).resolve().parent
 CLAUDE_MODEL = "claude-opus-5-5"
 INFOMANIAK_URL = "https://api.infomaniak.com/2/ai/{product}/openai/v1"
 BOT_NAME_MARK = "Notetaker"
+REPO_URL = "https://github.com/FreeCAD/Meetings/tree/main/bot"
 
 # The system prompt and the meeting context are the same for the two calls, and the task comes
 # last. Thus the second call can use the prompt cache of the first call again.
 SYSTEM = """\
 You work on the minutes of public meetings of the FreeCAD open-source community. The minutes are \
-published in a public GitHub repository after a maintainer reviews them, so a wrong statement \
+published in a public GitHub repository after a review period, so a wrong statement \
 about what a named person decided, promised, or opposed does real harm. An incomplete record is \
 acceptable; an invented one is not.
 
 The transcript comes from automatic speech-to-text. Each participant was recorded on a separate \
 audio track, so the speaker label of each line is reliable even when the words are not. Expect \
 wrong words, especially technical terms and names. The glossary lists terms that the community \
-uses; use it to read the transcript, and write those terms in their correct form.
+uses; use it to read the transcript, and write those terms in their correct form. The \
+corrections are rules from the maintainers about mistakes that earlier minutes made. Obey each \
+correction.
+
+A line with "(chat)" after the name is a message that the participant typed in the meeting chat. \
+Its text is exact. Participants use the chat for links, names of issues and pull requests, and \
+short comments on what is said at that time. Treat a chat message as part of the discussion. When a \
+link or a reference from the chat belongs to a topic, a decision, or an action item, give it there \
+and copy it character for character. Leave chat messages that have no relation to the meeting out.
 
 The minutes have four kinds of items:
 
@@ -77,13 +86,23 @@ shows it. If the meeting has none of a kind, return an empty list for that kind.
 transcript that support it. Copy each quote word for word from one line of the transcript, with \
 the speaker and the start time of that line. A program checks each quote against the transcript \
 and removes items whose quotes it cannot find.
-- If an agenda is given, use its items as the topics where the discussion matches them, and keep \
-their order.
+- For each topic, give in "links" each web address from a chat message that belongs to the topic. \
+Copy each address character for character. Give an empty list if the topic has none.
+- If an agenda for this meeting is given, use its items as the topics where the discussion matches \
+them. Leave out agenda items that the meeting did not discuss.
+- If a rolling agenda is given, it is one document for all meetings of the series. It can contain \
+items of earlier meetings, items that are complete, and items for later meetings. The series can add \
+new items at the top or at the bottom, and the meeting can work through the items from the top \
+down or from the bottom up. Do not assume a direction. Use date headings and marks in the agenda, \
+and most of all the transcript, to find the items that this meeting discussed. Use those items as \
+the topics, with the wording of the agenda. Do not report an agenda item that the transcript does \
+not show.
+- Give the topics in the sequence in which the meeting discussed them.
 """
 
 REVIEW_TASK = """\
 The draft items below come from a first pass over this meeting. Check each item against the \
-transcript before a maintainer reviews it. Judge each item on its own; do not let a confident \
+transcript before reviewers read it. Judge each item on its own; do not let a confident \
 draft persuade you.
 
 Give one verdict for each item, with the item's kind and index:
@@ -101,6 +120,7 @@ Say in one sentence what is wrong when the verdict is not "supported".
 class Topic(BaseModel):
     title: str
     summary: str
+    links: list[str]
 
 
 class Verdict(BaseModel):
@@ -130,14 +150,43 @@ def normalize(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9 ]+", " ", text.lower()).split())
 
 
-def load_attendees(directory: Path) -> list[str]:
-    """Display names of all participants, in the sequence that they joined. The last name of a participant wins."""
+def load_events(directory: Path) -> tuple[list[str], list[dict]]:
+    """The attendees and the chat messages of a capture.
+
+    The attendees are the display names of all participants, in the sequence that they joined.
+    The last name of a participant wins. A chat message has the form of a transcript utterance.
+    """
+    events = [json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line]
     names: dict[str, str] = {}
-    for line in (directory / "events.jsonl").read_text().splitlines():
-        event = json.loads(line) if line else {}
+    for event in events:
         if event.get("type") in ("participant_joined", "name_changed") and event.get("name"):
             names[event["participantId"]] = event["name"]
-    return list(dict.fromkeys(n for n in names.values() if BOT_NAME_MARK not in n))
+    attendees = list(dict.fromkeys(n for n in names.values() if BOT_NAME_MARK not in n))
+    chat = []
+    for event in events:
+        # A person who left before the bot joined is not an attendee, so their message has no speaker.
+        speaker = names.get(event.get("participantId")) if event.get("type") == "chat" else None
+        if speaker in attendees and event.get("text", "").strip():
+            start = 0.0 if event.get("beforeCapture") else event["t"]
+            chat.append({"start_s": start, "end_s": start, "participantId": event["participantId"],
+                         "speaker": speaker, "text": event["text"].strip(), "chat": True})
+    return attendees, chat
+
+
+def load_corrections(path: Path) -> tuple[list[tuple[re.Pattern, str]], list[str]]:
+    """The spelling corrections ("wrong -> right") and the rules of the corrections file."""
+    lines = [t.strip() for t in path.read_text().splitlines()] if path.exists() else []
+    spelling, rules = [], []
+    for line in lines:
+        if not line or line.startswith("#"):
+            continue
+        wrong, arrow, right = line.partition("->")
+        if arrow and wrong.strip() and right.strip():
+            spelling.append((re.compile(rf"\b{re.escape(wrong.strip())}\b", re.IGNORECASE), right.strip()))
+            rules.append(f'Write "{right.strip()}", not "{wrong.strip()}".')
+        else:
+            rules.append(line)
+    return spelling, rules
 
 
 def quote_found(evidence, utterances: list[dict], window_s: float = 90.0) -> bool:
@@ -282,7 +331,9 @@ def main() -> None:
     parser.add_argument("--date", help="date of the meeting, YYYY-MM-DD")
     parser.add_argument("--transcript", type=Path, help="transcript .jsonl file (default: transcript-large-v3-turbo.jsonl)")
     parser.add_argument("--agenda", type=Path, help="agenda.md of the meeting, if there is one")
+    parser.add_argument("--rolling-agenda", type=Path, help="agenda.md of the series, if the series uses one agenda for all meetings")
     parser.add_argument("--glossary", type=Path, default=HERE.parent / "glossary.txt")
+    parser.add_argument("--corrections", type=Path, default=HERE.parent / "corrections.txt")
     parser.add_argument("--backend", choices=["infomaniak", "ollama", "claude"], default="infomaniak",
                         help="infomaniak: a hosted model at Infomaniak AI Tools (default). "
                              "ollama: a local model, no data leaves this computer. claude: the Claude API")
@@ -305,18 +356,27 @@ def main() -> None:
 
     transcript_file = args.transcript or args.directory / "transcript-large-v3-turbo.jsonl"
     utterances = [json.loads(line) for line in transcript_file.read_text().splitlines() if line]
-    attendees = load_attendees(args.directory)
+    # Correct the spoken words before the model reads them. The quote check then uses the same text.
+    spelling, rules = load_corrections(args.corrections)
+    for u in utterances:
+        for pattern, right in spelling:
+            u["text"] = pattern.sub(right, u["text"])
+    attendees, chat = load_events(args.directory)
+    # The chat messages go into the transcript at their times, so the quote check applies to them also.
+    utterances = sorted(utterances + chat, key=lambda u: u["start_s"])
     if not attendees:
         sys.exit("The capture has no participants.")
     glossary = [t.strip() for t in args.glossary.read_text().splitlines()] if args.glossary.exists() else []
     glossary = [t for t in glossary if t and not t.startswith("#")]
 
-    transcript = "\n".join(f"[{u['start_s']:.1f}] {u['speaker']}: {u['text']}" for u in utterances)
+    transcript = "\n".join(f"[{u['start_s']:.1f}] {u['speaker']}{' (chat)' if u.get('chat') else ''}: {u['text']}" for u in utterances)
     context = (
         f"<meeting>\nSeries: {args.series}\nDate: {args.date}\n</meeting>\n\n"
         "<attendees>\n" + "\n".join(attendees) + "\n</attendees>\n\n"
         f"<glossary>\n{', '.join(glossary)}\n</glossary>\n\n"
+        + ("<corrections>\n" + "\n".join(f"- {r}" for r in rules) + "\n</corrections>\n\n" if rules else "")
         + (f"<agenda>\n{args.agenda.read_text()}\n</agenda>\n\n" if args.agenda else "")
+        + (f"<rolling_agenda>\n{args.rolling_agenda.read_text()}\n</rolling_agenda>\n\n" if args.rolling_agenda else "")
         + "The number in brackets at the start of each transcript line is its start time in seconds.\n\n"
         f"<transcript>\n{transcript}\n</transcript>\n\n"
     )
@@ -379,11 +439,20 @@ def main() -> None:
     def mark(kind: str, i: int) -> str:
         return " *(review)*" if notes[kind, i] else ""
 
-    lines = [f"# {args.series}: {args.date}", "", "## Attendees", ""]
+    model = {"claude": CLAUDE_MODEL, "infomaniak": args.infomaniak_model, "ollama": args.ollama_model}[args.backend]
+    lines = [f"# {args.series}: {args.date}", "",
+             "> Crow, an automated notetaker, made these minutes. "
+             "They may contain mistakes or inaccuracies and are for reference only.", ">",
+             f"> Model: {model}  ", f"> Source code: <{REPO_URL}>", "", "## Attendees", ""]
     lines += [f"- {name}" for name in attendees]
     lines += ["", "## Topics", ""]
+    # A link is published only if a participant typed exactly that link into the chat.
+    chat_text = " ".join(u["text"] for u in utterances if u.get("chat"))
     for topic in draft.topics:
         lines += [f"### {topic.title}", "", topic.summary, ""]
+        links = [link for link in dict.fromkeys(topic.links) if re.fullmatch(r"https?://\S+", link) and link in chat_text]
+        if links:
+            lines += ["Links from the meeting chat:", ""] + [f"- <{link}>" for link in links] + [""]
     lines += ["## Decisions", ""]
     lines += [f"- {d.text}{mark('decision', i)}" for i, d in kept("decision", draft.decisions)] or ["None recorded."]
     lines += ["", "## Action items", ""]
@@ -392,8 +461,10 @@ def main() -> None:
     if statements:
         lines += ["", "## Proposals and objections", ""]
         lines += [f"- **{s.speaker}** ({s.kind}): {s.text}{mark('statement', i)}" for i, s in statements]
-    lines += ["", "---", "", "An automated agent made this draft from a transcript of the meeting. "
-              "A maintainer reviews it before publication.", ""]
+    if any(json.loads(line).get("type") == "kicked" for line in (args.directory / "events.jsonl").read_text().splitlines() if line):
+        lines += ["", "---", "", "A moderator removed the notetaker from the meeting before the end. "
+                  "These minutes contain only the part of the meeting before that time."]
+    lines.append("")
     (args.directory / f"minutes{suffix}.md").write_text("\n".join(lines))
 
     review_lines = ["# Review notes", "", "Items marked *(review)* in the minutes must be checked and the mark removed.", ""]

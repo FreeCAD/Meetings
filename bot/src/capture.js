@@ -17,7 +17,7 @@ const { values: opt } = parseArgs({
         name: { type: 'string', default: 'Crow - AI Notetaker' },
         avatar: { type: 'string', default: process.env.CROW_AVATAR_URL || 'https://raw.githubusercontent.com/FreeCAD/Meetings/main/bot/avatar.png' },
         'wait-minutes': { type: 'string', default: '15' },
-        'alone-minutes': { type: 'string', default: '5' },
+        'alone-minutes': { type: 'string', default: '1' },
         'max-minutes': { type: 'string', default: '120' },
         bitrate: { type: 'string', default: '32000' },
         headful: { type: 'boolean', default: false },
@@ -32,7 +32,7 @@ if (opt.help || !opt.url) {
   --name <text>          display name of the bot
   --avatar <url>         HTTPS address of the avatar image of the bot ("" for no avatar)
   --wait-minutes <n>     maximum wait for the room to open (default 15)
-  --alone-minutes <n>    leave after this time with no other participant (default 5)
+  --alone-minutes <n>    leave after this time with no other person, after the meeting had persons (default 1)
   --max-minutes <n>      maximum capture duration (default 120)
   --bitrate <n>          Opus bit rate for each track (default 32000)
   --headful              show the browser window
@@ -42,6 +42,9 @@ Stop the capture with Ctrl+C. The files are complete after the bot leaves.`);
 }
 
 const minutes = key => Number(opt[key]) * 60000;
+
+// Other automatic participants do not keep the bot in the room.
+const OTHER_BOT = /notetaker|note taker|fireflies|otter\.ai|read\.ai|recorder/i;
 const outDir = resolve(opt.out || join('out', new Date().toISOString().replace(/[:.]/g, '-')));
 const eventsFile = join(outDir, 'events.jsonl');
 const events = [];
@@ -50,6 +53,7 @@ const log = message => console.log(`[${new Date().toISOString().slice(11, 19)}] 
 mkdirSync(outDir, { recursive: true });
 
 let stopReason = null;
+let kicked = false;
 
 process.on('SIGINT', () => {
     stopReason ??= 'stopped by the operator';
@@ -60,6 +64,7 @@ process.on('SIGTERM', () => {
 
 function onEvent(event) {
     events.push(event);
+    kicked ||= event.type === 'kicked';
     appendFileSync(eventsFile, `${JSON.stringify(event)}\n`);
 
     const who = event.name ? `"${event.name}" (${event.participantId})` : event.participantId || '';
@@ -100,19 +105,25 @@ try {
 
         const started = Date.now();
         let aloneSince = Date.now();
+        let hadPersons = false;
 
         while (!stopReason) {
             await new Promise(r => setTimeout(r, 1000));
 
             const status = await page.evaluate(() => window.__nt.status()).catch(() => null);
 
-            if (!status || !status.joined) {
+            if (kicked) {
+                // The bot does not join again. The minutes contain the part before this time.
+                stopReason = 'a moderator removed the bot';
+            } else if (!status || !status.joined) {
                 stopReason = 'the conference ended or removed the bot';
             } else if (Date.now() - started > minutes('max-minutes')) {
                 stopReason = 'maximum duration';
-            } else if (status.participants > 0) {
+            } else if (status.names.some(name => !OTHER_BOT.test(name || ''))) {
                 aloneSince = Date.now();
-            } else if (Date.now() - aloneSince > minutes('alone-minutes')) {
+                hadPersons = true;
+            } else if (Date.now() - aloneSince > minutes(hadPersons ? 'alone-minutes' : 'wait-minutes')) {
+                // Before the first person arrives, the bot waits for the longer time.
                 stopReason = 'no other participant';
             }
         }

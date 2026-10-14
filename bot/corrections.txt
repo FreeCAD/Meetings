@@ -1,0 +1,13 @@
+# Corrections for mistakes that the minutes make again and again.
+# Add one correction on each line. Lines that start with # are ignored.
+#
+# A spelling correction has the form "wrong -> right". The script replaces the wrong word in
+# the spoken transcript before the model reads it. The match ignores case and finds only full
+# words. Use a spelling correction only for a word that is always wrong.
+#
+# All other lines are rules. The model gets each rule as an instruction.
+
+Yorick -> Yorik
+Free CAD -> FreeCAD
+
+The CAM workbench was called "Path" before FreeCAD 1.0. Write "CAM" for the workbench. Write "path" only for a toolpath.

@@ -5,8 +5,9 @@
 # ///
 """Open a pull request that adds the minutes of one meeting to the Meetings repository.
 
-The script uses the GitHub CLI (`gh`) and its login. It sends only `minutes.md` and the review
-notes. The transcript, the evidence file, and the audio stay on this computer.
+The script uses the GitHub CLI (`gh`). If CROW_APP_ID and CROW_APP_KEY are set, it operates as
+the GitHub App of the bot (see github_app.py). If not, it uses the `gh` login. It sends only
+`minutes.md` and the review notes. The transcript, the evidence file, and the audio stay on this computer.
 
     uv run publish.py out/test1 --series "CAM Meetup" --series-dir cam --date 2026-10-06
 
@@ -17,20 +18,31 @@ branch and does not open a second pull request.
 import argparse
 import base64
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+HERE = Path(__file__).resolve().parent
+
+REVIEW_DAYS = 7
+
 PR_BODY = """\
-An automated agent (Crow) made these minutes from a transcript of the meeting. A maintainer must \
-review them before the merge.
+An automated agent (Crow) made these minutes from a transcript of the meeting. This pull request \
+merges automatically {days} days after it opens, if nobody stops it.
 
 ## Review procedure
 
 - [ ] Make sure that each decision and each action item is correct, and that it names the correct person.
-- [ ] Correct or remove each item that has the mark *(review)*, then remove the mark.
-- [ ] Correct wrong technical terms and display names.
+- [ ] Correct or remove each item that has the mark *(review)*, then remove the mark. \
+The automatic merge does not occur while a mark remains.
+- [ ] Correct wrong technical terms and display names. For a mistake that repeats, add a line to \
+`bot/corrections.txt` in a separate pull request.
+
+To correct the minutes, push a commit to this branch or add suggestions in a review. To stop the \
+automatic merge, add the label `hold` or request changes. To publish before the {days} days, merge \
+the pull request.
 
 ## Review notes
 
@@ -78,11 +90,19 @@ def main() -> None:
     path = f"meetings/{args.series_dir}/{args.date}/minutes.md"
     branch = f"minutes/{args.series_dir}/{args.date}"
     title = f"Minutes: {args.series}, {args.date}"
-    body = PR_BODY.format(notes=notes)
+    body = PR_BODY.format(days=REVIEW_DAYS, notes=notes)
 
     if args.dry_run:
         print(f"repository: {args.repo}\nbranch:     {branch}\nfile:       {path}\ntitle:      {title}\n\n{body}")
         return
+
+    if os.environ.get("CROW_APP_ID"):
+        # Get a new token here, because a token from the start of the meeting can be expired.
+        token = subprocess.run(["uv", "run", str(HERE / "github_app.py"), "--repo", args.repo],
+                               capture_output=True, text=True)
+        if token.returncode != 0:
+            sys.exit(f"No token of the GitHub App: {token.stderr.strip()[-500:]}")
+        os.environ["GH_TOKEN"] = token.stdout.strip()
 
     base = gh("api", f"repos/{args.repo}", "--jq", ".default_branch").stdout.strip()
     if gh("api", f"repos/{args.repo}/contents/{path}?ref={base}", check=False).returncode == 0:
@@ -104,11 +124,20 @@ def main() -> None:
         content["sha"] = old.stdout.strip()
     gh("api", "-X", "PUT", f"repos/{args.repo}/contents/{path}", body=content)
 
+    # The workflow merge-minutes.yml merges only pull requests with the label "minutes".
+    # The command fails if the label exists, so ignore the result.
+    gh("label", "create", "minutes", "--repo", args.repo, "--color", "0e8a16",
+       "--description", "Minutes from the notetaker bot. Merges automatically after the review period.", check=False)
+    gh("label", "create", "hold", "--repo", args.repo, "--color", "d93f0b",
+       "--description", "Stops the automatic merge of minutes.", check=False)
+
     url = gh("pr", "list", "--repo", args.repo, "--head", branch, "--state", "open", "--json", "url", "--jq", ".[0].url").stdout.strip()
     if url:
+        gh("pr", "edit", url, "--add-label", "minutes")
         print(f"updated the pull request: {url}")
     else:
-        url = gh("pr", "create", "--repo", args.repo, "--base", base, "--head", branch, "--title", title, "--body", body).stdout.strip()
+        url = gh("pr", "create", "--repo", args.repo, "--base", base, "--head", branch, "--title", title,
+                 "--body", body, "--label", "minutes").stdout.strip()
         print(f"opened the pull request: {url}")
 
 

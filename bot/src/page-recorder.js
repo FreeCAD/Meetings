@@ -155,10 +155,30 @@ export function installRecorder({ pollMs, bitrate }) {
         events?.[name] && room.on(events[name], safeSync);
     }
 
+    // Text messages of the meeting chat. Jitsi sends a private message with a different event, so
+    // the bot does not record private messages.
+    const chat = (id, text, extra = {}) => emit('chat', { participantId: id, name: nameOf(id) || extra.nick || null, text: String(text), ...extra });
+
+    events?.MESSAGE_RECEIVED && room.on(events.MESSAGE_RECEIVED, (id, text, ts, nick) => chat(id, text, { nick: nick || undefined }));
+    try {
+        // Messages that the page received before this function started.
+        for (const m of window.APP.store.getState()['features/chat']?.messages || []) {
+            if (!m.privateMessage && m.messageType !== 'error' && m.participantId && m.message) {
+                chat(m.participantId, m.message, { nick: m.displayName || undefined, beforeCapture: true });
+            }
+        }
+    } catch (e) {
+        emit('error', { message: `chat history: ${e}` });
+    }
+
+    // A moderator removed the bot. Report it immediately, because the page can close after that.
+    events?.KICKED && room.on(events.KICKED, () => emit('kicked'));
+
     window.__nt = {
         status: () => ({
             joined: room.isJoined(),
             participants: known.size,
+            names: [ ...known.values() ],
             segments: active.size,
             audioContext: ctx.state
         }),

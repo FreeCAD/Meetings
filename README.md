@@ -9,7 +9,7 @@ This repository contains the agendas and the minutes of the public FreeCAD commu
 | `bot/reference/` | The plan and the research for the bot. |
 | `bot/glossary.txt` | FreeCAD terms that the bot uses to read the transcripts. |
 
-Crow joins a meeting with the display name "Crow - AI Notetaker". It drafts the minutes and opens a pull request. A maintainer reviews each pull request before the merge.
+Crow joins a meeting with the display name "Crow - AI Notetaker". It drafts the minutes and opens a pull request. Reviewers have 7 days to correct the minutes. Then the workflow `.github/workflows/merge-minutes.yml` merges the pull request, if nobody stopped it.
 
 The source code has the MIT license. See `LICENSE`.
 

@@ -169,13 +169,13 @@ Vexa is the fallback if the custom bot fails in the test.
 4. The name of the bot is Crow. Its display name in a meeting is "Crow - AI Notetaker", which states its function.
 5. The bot waits if no person opened the room. It stops after a set time and reports that no meeting occurred.
 6. The bot records one audio file for each participant, with the participant ID, the display name, and the time offset.
-7. The bot leaves when it is alone for 5 minutes, or when the maximum duration is reached.
+7. The bot leaves 1 minute after the last person leaves, or when the maximum duration is reached. Other notetaker bots do not count as persons.
 8. The pipeline applies voice activity detection to each track and sends the speech segments to speech-to-text with the glossary.
 9. The pipeline merges the segments by time into one transcript with speaker labels, then deletes the audio.
 10. The LLM makes the minutes from the transcript, the attendee list, the glossary, and the agenda, if one is available.
 11. A second LLM pass checks each decision and each action item against the transcript. It removes or marks items that have no support.
 12. The agent opens a pull request that adds `meetings/<series_name>/<YYYY-MM-DD>/minutes.md`. The pull request text lists the items with low confidence.
-13. A maintainer corrects and merges the pull request.
+13. Reviewers correct the pull request during 7 days. Then a scheduled workflow merges it, if nobody stopped it and no *(review)* mark remains.
 14. A scheduled task deletes the private transcript 30 days after the meeting.
 
 ### 5.3 Rules for correct attribution
@@ -231,7 +231,7 @@ meetings/
 | `meet.jit.si` changes its page or blocks automated guests | Capture stops | Monitor each meeting. Keep Vexa and self-hosted Jitsi as alternatives. |
 | Two meetings follow each other in the shared room | Minutes of one meeting contain the other | Split at the calendar boundary. Give each series its own room. |
 | Display names are free text ("Chris", "chris h", "iPhone") | Names differ between meetings, or do not identify a person | The reviewer corrects names. A roster file is a possible later addition. |
-| Any maintainer can merge, thus no person is responsible | Pull requests stay open | Send a reminder after 7 days. Assign owners later if necessary. |
+| Any maintainer can merge, thus no person is responsible | Pull requests stay open | A workflow merges the pull request after 7 days. The label `hold` stops it. |
 | Notice only, with participants in the EU | A participant objects to the record | The FPA approved the policy for the proof of concept. Write the policy down at formal adoption. This document is not legal advice. |
 | The transcript text goes to a hosted LLM vendor | Data protection concern | No audio leaves the server. Sign a data agreement with the LLM vendor, or use a local LLM. |
 | The LLM invents a decision | Wrong public minutes | The check pass, the low confidence list, and the human review. |

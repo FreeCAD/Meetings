@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Make the transcript and the minutes of one capture directory.
 #
-#   ./process.sh out/test1 "CAM Meetup" 2026-10-06 [path to agenda.md]
+#   ./process.sh out/test1 "CAM Meetup" 2026-10-06 [options for minutes.py]
+#
+# For example: --agenda <file> for the agenda of the meeting, or --rolling-agenda <file>.
 #
 # Set BACKEND=ollama to make the minutes with the local model. The default is infomaniak.
 set -euo pipefail
 
 if [ $# -lt 3 ]; then
-    echo "Usage: $0 <capture directory> <series name> <date YYYY-MM-DD> [agenda.md]"
+    echo "Usage: $0 <capture directory> <series name> <date YYYY-MM-DD> [options for minutes.py]"
     exit 2
 fi
 
@@ -15,7 +17,6 @@ here=$(cd "$(dirname "$0")" && pwd)
 dir=$1
 series=$2
 date=$3
-agenda=${4:-}
 
 backend=${BACKEND:-infomaniak}
 
@@ -30,4 +31,4 @@ fi
 
 node "$here/report.js" "$dir"
 uv run "$here/transcribe.py" "$dir"
-uv run "$here/minutes.py" "$dir" --series "$series" --date "$date" --backend "$backend" ${agenda:+--agenda "$agenda"}
+uv run "$here/minutes.py" "$dir" --series "$series" --date "$date" --backend "$backend" "${@:4}"

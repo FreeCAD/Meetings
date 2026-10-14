@@ -1,0 +1,106 @@
+# Merge the pull requests of the notetaker bot after the review period.
+#
+# A pull request merges when all these conditions are true:
+#   - It has the label "minutes" and a branch "minutes/...".
+#   - It opened REVIEW_DAYS days ago or more.
+#   - It is not a draft, and it does not have the label "hold".
+#   - No reviewer requested changes.
+#   - Its minutes.md has no "*(review)*" mark.
+#
+# For a mark or a failed merge, the workflow writes one comment on the pull request.
+
+name: Merge minutes
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Print the result for each pull request. Do not merge and do not comment.
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency: merge-minutes
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      REVIEW_DAYS: 7
+      DRY_RUN: ${{ inputs.dry-run || false }}
+    steps:
+      - name: Merge the pull requests that are ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d "$REVIEW_DAYS days ago" +%s)
+
+          # Write a comment, but only if the pull request does not have the same comment.
+          comment() {
+            local number=$1 body="<!-- merge-minutes -->"$'\n'"$2"
+            if gh pr view "$number" --json comments \
+                 | jq -e --arg body "$body" 'any(.comments[]; .body == $body)' > /dev/null; then
+              return
+            fi
+            if [[ $DRY_RUN == true ]]; then echo "  would comment: $2"; else gh pr comment "$number" --body "$body"; fi
+          }
+
+          gh pr list --label minutes --state open --limit 100 \
+            --json number,headRefName,createdAt,isDraft,labels,latestReviews,files \
+            | jq -c '.[]' | while read -r pr; do
+            number=$(jq -r .number <<< "$pr")
+            branch=$(jq -r .headRefName <<< "$pr")
+            echo "#$number ($branch)"
+
+            if [[ $branch != minutes/* ]]; then
+              echo "  skip: the branch is not a minutes branch"; continue
+            fi
+            if (( $(date -u -d "$(jq -r .createdAt <<< "$pr")" +%s) > cutoff )); then
+              echo "  skip: younger than $REVIEW_DAYS days"; continue
+            fi
+            if jq -e '.isDraft' <<< "$pr" > /dev/null; then
+              echo "  skip: draft"; continue
+            fi
+            if jq -e 'any(.labels[]; .name == "hold")' <<< "$pr" > /dev/null; then
+              echo "  skip: label hold"; continue
+            fi
+            if jq -e 'any(.latestReviews[]; .state == "CHANGES_REQUESTED")' <<< "$pr" > /dev/null; then
+              echo "  skip: changes requested"; continue
+            fi
+
+            files=$(jq -r '.files[].path | select(test("^meetings/.+/minutes\\.md$"))' <<< "$pr")
+            if [[ -z $files ]]; then
+              echo "  skip: no minutes.md"
+              comment "$number" "This pull request does not merge automatically, because it does not change a \`meetings/.../minutes.md\` file."
+              continue
+            fi
+            marked=""
+            for file in $files; do
+              if gh api "repos/$GH_REPO/contents/$file?ref=$branch" -H "Accept: application/vnd.github.raw" \
+                   | grep -qF '*(review)*'; then
+                marked="$marked $file"
+              fi
+            done
+            if [[ -n $marked ]]; then
+              echo "  skip: review marks in$marked"
+              comment "$number" "This pull request does not merge automatically, because \`minutes.md\` has one or more *(review)* marks. Correct or remove each marked item, and then remove the mark. The next run merges the pull request."
+              continue
+            fi
+
+            if [[ $DRY_RUN == true ]]; then
+              echo "  would merge"; continue
+            fi
+            if gh pr merge "$number" --squash; then
+              gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch" > /dev/null || true
+              echo "  merged"
+            else
+              comment "$number" "The automatic merge failed. A maintainer must merge this pull request."
+            fi
+          done
