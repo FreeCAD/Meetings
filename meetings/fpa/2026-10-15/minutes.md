@@ -82,7 +82,6 @@ The group discussed instances of potential trademark infringement, including a w
 
 Links from the meeting chat:
 
-- <https://freecad-app.com/download/>
 
 ## Decisions
 
