@@ -74,4 +74,4 @@ Links from the meeting chat:
 - **Billy (aka Connor):** Review the Dragknife pull request and comment on the translation PR to request restoring tool names in `base.py`.
 - **Fae:** Draft a GitHub issue with mock-up graphics proposing a version warning system for community machine templates.
 - **sliptonic:** Add guidance in the machine editor to advise users to install the machines add-on.
-- **Fae:** Review ADR-010 and provide comments or a write-up on how to adapt the tool holder definition for lathe support. *(review)*
+- **Fae:** Review ADR-010 and provide comments or a write-up on how to adapt the tool holder definition for lathe support.
