@@ -57,5 +57,5 @@ None recorded.
 
 - **Max:** Cut the RC2 release for FreeCAD 26.3.
 - **Chris Hennes (@chennes):** Block Meta's crawler from the wiki to resolve high server load.
-- **Chris Hennes (@chennes):** Review and finalize mitigation for the Lens server compromise with Amrit Paul, then release a new version of the Ondsel server and publish security advisories. *(review)*
+- **Chris Hennes (@chennes):** Review and finalize mitigation for the Lens server compromise with Amrit Paul, then release a new version of the Ondsel server and publish security advisories.
 - **Chris Hennes (@chennes):** Take the forums offline for approximately two hours to perform a PHPBB security upgrade.
