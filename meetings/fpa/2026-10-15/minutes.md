@@ -86,15 +86,15 @@ Links from the meeting chat:
 ## Decisions
 
 - The FPA will target a budget of 180,000 euros for the next year while finalizing the budget with Yorik.
-- The infrastructure team will migrate hosting from DigitalOcean to OVH using Ansible scripts to reduce costs and improve server specifications. *(review)*
+- The infrastructure team will migrate hosting from DigitalOcean to OVH using Ansible scripts to reduce costs and improve server specifications.
 - The CWG bounty program funds ($3,700) will be rolled forward to the next year, with the CWG deciding on the distribution structure.
-- A sandbox instance of ERP Next will be set up on the new infrastructure to evaluate its suitability for FPA's software management needs. *(review)*
-- A budget item of 1,000 euros will be allocated for thank-you merchandise for donors. *(review)*
+- A sandbox instance of ERP Next will be set up on the new infrastructure to evaluate its suitability for FPA's software management needs.
+- A budget item of 1,000 euros will be allocated for thank-you merchandise for donors.
 - FreeCAD Day is confirmed for the last Friday in January, regardless of the FOSDEM dev room application outcome.
 
 ## Action items
 
-- **Chris Hennes (@chennes):** Trigger the first test release of the addon typings to PyPI as a pre-release to verify token permissions. *(review)*
+- **Chris Hennes (@chennes):** Trigger the first test release of the addon typings to PyPI as a pre-release to verify token permissions.
 - **Chris Hennes (@chennes):** Migrate the FPA infrastructure from DigitalOcean to OVH using Ansible scripts.
 - **Chris Hennes (@chennes):** Set up the meeting recording service (Crow) on the new OVH infrastructure.
 - **Yorik:** Email the active wiki contributors to gather ideas on how to use the remaining 2,500 euros from the canceled documentation donation.
