@@ -66,4 +66,4 @@ None recorded.
 - **Dmitrii/@dpasukhi:** Update contribution guidelines (CONTRIBUTING.md and README.md) to specify that pull requests requiring full rewrites should be converted to issue reports, while simple ones may be merged.
 - **Chris Hennes (@chennes):** Send information about the Rust-based dependency in FreeCAD's libpack to Dmitrii.
 - **Pieter:** Prioritize reporting crash issues over fillet-specific issues and include the word 'crash' in the issue titles.
-- **Dmitrii/@dpasukhi:** Merge pending fillet fixes into the master branch within the next few days. *(review)*
+- **Dmitrii/@dpasukhi:** Merge pending fillet fixes into the master branch within the next few days.
