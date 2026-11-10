@@ -20,7 +20,7 @@ The meeting started with audio difficulties for Roy, who could not get his micro
 
 ### Proposal for additional maintainers for Draft and BIM workbenches
 
-Max proposed establishing a workflow similar to the CAM workbench team for the Draft and BIM workbenches. This would involve adding more maintainers (such as Tritao, Furgo, and Markus) who could review and merge their own PRs and those of others, reducing the bottleneck on the core maintainers. Max noted that Tritao had expressed interest in returning as a maintainer under this model. Roy agreed in principle but emphasized the need for double-checking and noted risks with self-merging large PRs. Tom added that some PRs involve C++ code which current BIM/Draft maintainers might not be able to review.
+Max proposed establishing a workflow similar to the CAM workbench team for the Draft and BIM workbenches. This would involve adding more maintainers (such as @tritao, @furgo16, and @marcuspollio) who could review and merge their own PRs and those of others, reducing the bottleneck on the core maintainers. Max noted that Tritao had expressed interest in returning under this model. @roy-043 agreed in principle but emphasized the need for double-checking and noted risks with self-merging large PRs. Tom added that some PRs involve C++ code which current BIM/Draft maintainers might not be able to review.
 
 ### Meeting frequency
 
@@ -28,7 +28,7 @@ Participants discussed changing the meeting schedule from weekly to bi-weekly (o
 
 ### FreeCAD 0.26.3 and 0.27.x release status
 
-Max provided an update on the upcoming 0.26.3 release, noting one remaining release-blocking issue regarding expressions and units that Peter is fixing. Once resolved, Release Candidate 3 will be issued, with a stable release potentially following a week later. Max also looked ahead to 0.27.2, mentioning the expected integration of OCCT 8.1 which will improve fillets, chamfers, and thickness operations, as well as a new topological naming algorithm being developed by Doctor Who.
+Max provided an update on the upcoming 26.3 release, noting one remaining release-blocking issue regarding expressions and units that Peter is fixing. Once resolved, Release Candidate 3 will be issued, with a stable release potentially following a week later. Max also looked ahead to 27.2, mentioning the expected integration of OCCT 8.1 which will improve fillets, chamfers, and thickness operations, as well as a new topological naming algorithm being developed by @drwho495.
 
 ### Meeting minutes repository
 
@@ -61,7 +61,7 @@ Links from the meeting chat:
 
 ### AI-generated fixes in AstoCAD fork
 
-Max discussed a fork by Pedalstro (AstoCAD) where many issues were addressed via AI-generated commits without human review. Max described adding a 'fixed in fork' label to track these issues for potential cherry-picking or inspiration, while avoiding spamming the original issues.
+Max discussed a fork by paddlestroke (AstoCAD) where many issues were addressed via AI-generated commits without human review. Max described adding a 'fixed in fork' label to track these issues for potential cherry-picking or inspiration, while avoiding spamming the original issues.
 
 ### Maintainer communication channels
 
