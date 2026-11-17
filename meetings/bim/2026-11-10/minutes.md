@@ -44,7 +44,7 @@ Max suggested Roy test code from Tritao. Since it was unclear if a PR existed, M
 
 ### New FreeCAD website and DevTalk forum
 
-Max introduced the staging version of the new FreeCAD website, primarily developed by Markus, which aims to replace the current site with a more modern design better suited for mobile devices. Max also mentioned DevTalk, a Discourse-based forum intended for development discussions and testing forum migration, sharing links for both.
+Max introduced the staging version of the new FreeCAD website, primarily developed by Marcus, which aims to replace the current site with a more modern design better suited for mobile devices. Max also mentioned DevTalk, a Discourse-based forum intended for development discussions and testing forum migration, sharing links for both.
 
 Links from the meeting chat:
 
